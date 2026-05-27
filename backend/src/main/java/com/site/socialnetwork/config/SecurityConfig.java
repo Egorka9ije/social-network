@@ -64,6 +64,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/search/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/search/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/{id}/followers").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/{id}/following").permitAll()
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .anyRequest().authenticated()
                 );

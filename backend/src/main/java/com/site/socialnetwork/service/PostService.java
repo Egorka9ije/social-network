@@ -17,6 +17,11 @@ import java.util.stream.Collectors;
 public class PostService {
     @Autowired
     private PostRepository postRepository;
+    @Autowired
+    private LikeService likeService;
+
+    @Autowired
+    private CommentService commentService;
 
     private PostDTO convertToDTO(Post post) {
         return new PostDTO(
@@ -27,8 +32,8 @@ public class PostService {
                 post.getUser().getId(),
                 post.getUser().getUsername(),
                 post.getUser().getAvatar(),
-                0L,  // likesAmount (пока 0, добавим позже)
-                0L   // commentsAmount (пока 0, добавим позже)
+                likeService.getLikesCount(post.getId()),      // ← реальное количество
+                commentService.getCommentsCount(post.getId())  // ← реальное количество
         );
     }
 

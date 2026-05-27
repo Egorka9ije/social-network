@@ -19,4 +19,5 @@ public class PostDTO {
     String avatar;
     Long likesAmount;
     Long commentAmount;
+
 }
