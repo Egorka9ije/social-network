@@ -3,7 +3,10 @@ package com.site.socialnetwork.service;
 import com.site.socialnetwork.dto.PostDTO;
 import com.site.socialnetwork.entity.Post;
 import com.site.socialnetwork.entity.User;
+import com.site.socialnetwork.repository.CommentRepository;
+import com.site.socialnetwork.repository.LikeRepository;
 import com.site.socialnetwork.repository.PostRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,10 @@ import java.util.stream.Collectors;
 public class PostService {
     @Autowired
     private PostRepository postRepository;
+    @Autowired
+    private LikeRepository likeRepository;
+    @Autowired
+    private CommentRepository commentRepository;
     @Autowired
     private LikeService likeService;
 
@@ -79,12 +86,20 @@ public class PostService {
     }
 
     // Удалить пост
+    @Transactional
     public void deletePost(Long id, User user) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Пост не найден"));
+
         if (!post.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Вы не можете удалить чужой пост");
         }
+
+        // Удаляем лайки
+        likeRepository.deleteAllByPost(post);
+        // Удаляем комментарии
+        commentRepository.deleteAllByPost(post);
+        // Удаляем пост
         postRepository.delete(post);
     }
 }

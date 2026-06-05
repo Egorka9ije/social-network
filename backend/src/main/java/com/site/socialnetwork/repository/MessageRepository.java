@@ -23,4 +23,5 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     // Непрочитанные сообщения от конкретного пользователя
     long countBySenderAndReceiverAndIsReadFalse(User sender, User receiver);
+    void deleteAllBySenderOrReceiver(User sender, User receiver);
 }

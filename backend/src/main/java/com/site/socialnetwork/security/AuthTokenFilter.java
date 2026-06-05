@@ -35,22 +35,18 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         try {
+            System.out.println("=== ЗАПРОС: " + request.getMethod() + " " + request.getRequestURI());
             String jwt = parseJwt(request);
+            System.out.println("=== JWT: " + jwt);
 
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
+                System.out.println("=== Валидный");
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
-
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-
+                                userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
@@ -69,4 +65,5 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         return null;
     }
+
 }

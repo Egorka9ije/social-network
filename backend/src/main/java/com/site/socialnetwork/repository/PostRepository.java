@@ -1,6 +1,7 @@
 package com.site.socialnetwork.repository;
 
 import com.site.socialnetwork.entity.Post;
+import com.site.socialnetwork.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +17,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     // Посты от подписок (лента друзей)
     List<Post> findByUserIdInOrderByCreatedAtDesc(List<Long> userIds);
+    void deleteAllByUser(User user);
+    List<Post> findByUserId(Long userId);
 }

@@ -27,4 +27,5 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     // Проверка подписки
     boolean existsByFollowerAndFollowing(User follower, User following);
+    void deleteAllByFollowerOrFollowing(User follower, User following);
 }
