@@ -14,3 +14,14 @@ export interface Comment {
     id: number; content: string; userId: number;
     username: string; userAvatar: string | null; createdAt: string;
 }
+
+export interface Message {
+    id: number;
+    senderId: number;
+    senderName: string;
+    senderAvatar: string | null;
+    receiverId: number;
+    content: string;
+    timestamp: string;
+    read: boolean;
+}

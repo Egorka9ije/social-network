@@ -9,6 +9,13 @@ import com.site.socialnetwork.service.PostService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 
@@ -39,10 +46,26 @@ public class PostController {
         return ResponseEntity.ok(postService.getPostById(id));
     }
 
-    @PostMapping()
-    public ResponseEntity<PostDTO> createPost(@RequestBody CreatePostRequest request){
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostDTO> createPost(
+            @RequestParam("content") String content,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
         User user = authService.getCurrentUser();
-        PostDTO post = postService.createPost(request.getContent(), request.getImage(), user);
+
+        String imagePath = null;
+        if (image != null && !image.isEmpty()) {
+            String fileName = UUID.randomUUID().toString().substring(0, 8) + "_" + image.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads/posts/");
+            try {
+                Files.createDirectories(uploadPath);
+                Files.copy(image.getInputStream(), uploadPath.resolve(fileName));
+                imagePath = "/uploads/posts/" + fileName;
+            } catch (IOException e) {
+                throw new RuntimeException("Ошибка загрузки изображения");
+            }
+        }
+
+        PostDTO post = postService.createPost(content, imagePath, user);
         return ResponseEntity.ok(post);
     }
 
