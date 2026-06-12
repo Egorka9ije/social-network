@@ -4,6 +4,7 @@ import com.site.socialnetwork.dto.CreateMessageRequest;
 import com.site.socialnetwork.dto.MessageDTO;
 import com.site.socialnetwork.dto.UserDTO;
 import com.site.socialnetwork.entity.User;
+import com.site.socialnetwork.repository.UserRepository;
 import com.site.socialnetwork.service.AuthService;
 import com.site.socialnetwork.service.MessageService;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,12 @@ import java.util.List;
 public class MessageController {
     private final MessageService messageService;
     private final AuthService authService;
+    private final UserRepository userRepository;
 
-    public MessageController(MessageService messageService, AuthService authService) {
+    public MessageController(MessageService messageService, AuthService authService, UserRepository userRepository) {
         this.messageService = messageService;
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     // Отправить сообщение
@@ -42,5 +45,20 @@ public class MessageController {
     public ResponseEntity<List<UserDTO>> getChatList() {
         User user = authService.getCurrentUser();
         return ResponseEntity.ok(messageService.getChatList(user));
+    }
+    @GetMapping("/unread/{userId}")
+    public ResponseEntity<Long> getUnreadCount(@PathVariable Long userId) {
+        User currentUser = authService.getCurrentUser();
+        User otherUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        return ResponseEntity.ok(messageService.getUnreadCount(currentUser, otherUser));
+    }
+    @PutMapping("/read/{userId}")
+    public ResponseEntity<?> markAsRead(@PathVariable Long userId) {
+        User currentUser = authService.getCurrentUser();
+        User otherUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        messageService.markAsRead(currentUser, otherUser);
+        return ResponseEntity.ok("Отмечено как прочитанное");
     }
 }

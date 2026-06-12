@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../service/api';
 import { AuthContext } from '../context/AuthContext';
 import type { Post, Comment, User } from '../types';
+import { useRef } from 'react';
 
 function FeedPage() {
     const [posts, setPosts] = useState<Post[]>([]);
@@ -18,11 +19,25 @@ function FeedPage() {
     const [showSearch, setShowSearch] = useState(false);
     const [postImage, setPostImage] = useState<File | null>(null);
     const [fullImage, setFullImage] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
 
     const fetchPosts = async () => {
         try {
             const response = await api.get('/posts');
             setPosts(response.data);
+
+            // Проверяем лайки для каждого поста
+            if (currentUser) {
+                const liked = new Set<number>();
+                for (const post of response.data) {
+                    try {
+                        const likeRes = await api.get(`/posts/${post.id}/is-liked`);
+                        if (likeRes.data) liked.add(post.id);
+                    } catch (e) {}
+                }
+                setLikedPosts(liked);
+            }
         } catch (err) { console.error('Ошибка', err); }
     };
 
@@ -46,12 +61,22 @@ function FeedPage() {
             setNewPost('');
             setPostImage(null);
             fetchPosts();
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            setPostImage(null);
         } catch (err) { console.error('Ошибка', err); }
     };
 
     const handleLike = async (postId: number) => {
         try {
-            await api.post(`/posts/${postId}/like`);
+            if (likedPosts.has(postId)) {
+                await api.delete(`/posts/${postId}/like`);
+                setLikedPosts(prev => { const next = new Set(prev); next.delete(postId); return next; });
+            } else {
+                await api.post(`/posts/${postId}/like`);
+                setLikedPosts(prev => new Set(prev).add(postId));
+            }
             fetchPosts();
         } catch (err) { console.error('Ошибка', err); }
     };
@@ -171,10 +196,41 @@ function FeedPage() {
                     </div>
 
                 <nav style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <Link to="/" style={navBtnStyle}>🏠 Лента</Link>
-                    <Link to="/profile/me" style={navBtnStyle}>👤 Профиль</Link>
-                    <Link to="/messages" style={navBtnStyle}>💬 Чаты</Link>
-                    <button onClick={handleLogout} style={logoutBtnStyle}>🚪 Выйти</button>
+                    <Link to="/" style={navBtnStyle}
+                          onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                          }}
+                          onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                          }}
+                    >🏠 Лента</Link>
+                    <Link to="/profile/me" style={navBtnStyle}
+                          onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                          }}
+                          onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                          }}>👤 Профиль</Link>
+                    <Link to="/messages" style={navBtnStyle}
+                          onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                          }}
+                          onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                          }}>💬 Чаты</Link>
+
                 </nav>
             </header>
 
@@ -197,6 +253,7 @@ function FeedPage() {
                     <div style={{ marginBottom: 10 }}>
                         <input
                             type="file"
+                            ref={fileInputRef}
                             accept="image/*"
                             onChange={(e) => setPostImage(e.target.files?.[0] || null)}
                             style={{ fontSize: 14 }}
@@ -215,8 +272,16 @@ function FeedPage() {
                             marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e3f2fd',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👤</div>
+                                {post.avatar ? (
+                                    <img src={`http://localhost:8080${post.avatar}`} alt=""
+                                         style={{
+                                             width: 40, height: 40, borderRadius: '50%',
+                                             objectFit: 'cover'
+                                         }} />
+                                ) : (
+                                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e3f2fd',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👤</div>
+                                )}
                                 <Link to={`/profile/${post.authorId}`} style={{ textDecoration: 'none', color: '#0d47a1', fontWeight: 600 }}>
                                     {post.authorName}
                                 </Link>
@@ -234,7 +299,6 @@ function FeedPage() {
                             </div>
 
                             {/* Картинка поста */}
-                            {/* Картинка поста */}
                             {post.image && (
                                 <div
                                     onClick={() => setFullImage(post.image!)}
@@ -249,6 +313,31 @@ function FeedPage() {
                                         style={{ width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 8 }}
                                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                     />
+                                </div>
+                            )}
+                            {/* ← ВОТ СЮДА ДОБАВЬ: */}
+                            <div style={{ display: 'flex', gap: 20, borderTop: '1px solid #eee', paddingTop: 10 }}>
+                                <button onClick={() => handleLike(post.id)} style={actionBtnStyle}>
+                                    {likedPosts.has(post.id) ? '❤️' : '🤍'} {post.likesAmount}
+                                </button>
+                                <button onClick={() => loadComments(post.id)} style={actionBtnStyle}>💬 {post.commentAmount}</button>
+                            </div>
+
+                            {expandedComments === post.id && (
+                                <div style={{ marginTop: 12, padding: 12, background: '#f8f9fa', borderRadius: 8 }}>
+                                    {comments[post.id]?.map(c => (
+                                        <div key={c.id} style={{ padding: '4px 0', fontSize: 14 }}>
+                                            <strong>{c.username}</strong>: {c.content}
+                                        </div>
+                                    ))}
+                                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                        <input placeholder="Комментарий..." value={commentText[post.id] || ''}
+                                               onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
+                                               style={{ flex: 1, padding: 8, border: '1px solid #ddd', borderRadius: 8, outline: 'none' }} />
+                                        <button onClick={() => handleAddComment(post.id)} style={{
+                                            padding: '8px 16px', background: '#1a73e8', color: 'white',
+                                            border: 'none', borderRadius: 8, cursor: 'pointer' }}>Отправить</button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -290,7 +379,8 @@ const navBtnStyle: React.CSSProperties = {
     color: 'white', textDecoration: 'none', fontSize: 15, fontWeight: 500,
     padding: '8px 16px', borderRadius: 25, transition: 'all 0.3s ease',
     background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(5px)',
-    border: '1px solid rgba(255,255,255,0.15)'
+    border: '1px solid rgba(255,255,255,0.15)',
+    cursor: 'pointer'
 };
 
 const logoutBtnStyle: React.CSSProperties = {

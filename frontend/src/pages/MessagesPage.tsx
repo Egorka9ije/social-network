@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../service/api';
 import { AuthContext } from '../context/AuthContext';
 import type { User, Message } from '../types';
+import { useSearchParams } from 'react-router-dom';
 
 interface ChatPartner extends User {
     lastMessage?: string;
@@ -16,6 +17,8 @@ function MessagesPage() {
     const [selectedChat, setSelectedChat] = useState<ChatPartner | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
+    const [searchParams] = useSearchParams();
+    const chatUserId = searchParams.get('chat');
 
     useEffect(() => {
         if (!currentUser && !authLoading) {
@@ -28,18 +31,61 @@ function MessagesPage() {
     }, []);
 
     useEffect(() => {
+        if (chatUserId && chats.length > 0) {
+            const chat = chats.find(c => c.id === Number(chatUserId));
+            if (chat) setSelectedChat(chat);
+        }
+    }, [chatUserId, chats]);
+
+    useEffect(() => {
         if (selectedChat) {
             fetchMessages(selectedChat.id);
         }
     }, [selectedChat]);
 
+    const handleSelectChat = async (chat: ChatPartner) => {
+        setSelectedChat(chat);
+        if (chat.unread > 0) {
+            try {
+                await api.put(`/messages/read/${chat.id}`);
+                fetchChats(); // обновляем список чатов
+            } catch (e) {}
+        }
+    };
+
+
     const fetchChats = async () => {
         try {
             const response = await api.get('/messages/chats');
-            setChats(response.data);
+            const chatsData = response.data;
+
+            // Загружаем непрочитанные для каждого чата
+            const chatsWithUnread = await Promise.all(
+                chatsData.map(async (chat: ChatPartner) => {
+                    try {
+                        const unreadRes = await api.get(`/messages/unread/${chat.id}`);
+                        return { ...chat, unread: unreadRes.data };
+                    } catch (e) {
+                        return { ...chat, unread: 0 };
+                    }
+                })
+            );
+
+            setChats(chatsWithUnread);
+
+            if (chatUserId) {
+                const existingChat = chatsWithUnread.find((c: ChatPartner) => c.id === Number(chatUserId));
+                if (existingChat) {
+                    setSelectedChat(existingChat);
+                } else {
+                    try {
+                        const userRes = await api.get(`/users/${chatUserId}`);
+                        setSelectedChat(userRes.data);
+                    } catch (e) {}
+                }
+            }
         } catch (err) {
             console.error('Ошибка загрузки чатов', err);
-        } finally {
         }
     };
 
@@ -78,7 +124,23 @@ function MessagesPage() {
                 justifyContent: 'space-between', alignItems: 'center',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
             }}>
-                <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: 18 }}>← Назад</Link>
+                <Link to="/" style={{
+                    color: 'white', textDecoration: 'none', fontSize: 15, fontWeight: 500,
+                    padding: '8px 18px', borderRadius: 25, transition: 'all 0.3s ease',
+                    background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(5px)',
+                    border: '1px solid rgba(255,255,255,0.15)'
+                }}
+                      onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                      }}
+                      onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                      }}
+                >← Назад</Link>
                 <h1 style={{ color: 'white', fontSize: 22, margin: 0 }}>💬 Сообщения</h1>
                 <div style={{ width: 70 }} /> {/* пустое место для симметрии */}
             </header>
@@ -92,9 +154,10 @@ function MessagesPage() {
                     <div style={{ padding: 16, borderBottom: '1px solid #eee', fontWeight: 600, color: '#0d47a1' }}>
                         Чаты
                     </div>
+
                     {chats.map(chat => (
                         <div key={chat.id}
-                             onClick={() => setSelectedChat(chat)}
+                             onClick={() => handleSelectChat(chat)}
                              style={{
                                  padding: '12px 16px', cursor: 'pointer',
                                  display: 'flex', alignItems: 'center', gap: 10,
@@ -116,6 +179,17 @@ function MessagesPage() {
                                     @{chat.username}
                                 </div>
                             </div>
+                            {chat.unread > 0 && (
+                                <span style={{
+                                    background: '#dc3545', color: 'white',
+                                    borderRadius: '50%', minWidth: 22, height: 22,
+                                    display: 'inline-flex', alignItems: 'center',
+                                    justifyContent: 'center', fontSize: 12,
+                                    fontWeight: 700, padding: '0 5px'
+                                }}>
+                {chat.unread}
+            </span>
+                            )}
                         </div>
                     ))}
                     {chats.length === 0 && (

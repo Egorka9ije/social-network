@@ -2,6 +2,7 @@ package com.site.socialnetwork.service;
 
 import com.site.socialnetwork.dto.PostDTO;
 import com.site.socialnetwork.entity.Post;
+import com.site.socialnetwork.entity.Role;
 import com.site.socialnetwork.entity.User;
 import com.site.socialnetwork.repository.CommentRepository;
 import com.site.socialnetwork.repository.LikeRepository;
@@ -91,15 +92,13 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Пост не найден"));
 
-        if (!post.getUser().getId().equals(user.getId())) {
+        // Админ может удалять любые посты
+        if (!post.getUser().getId().equals(user.getId()) && !user.getRole().equals(Role.ROLE_ADMIN)) {
             throw new RuntimeException("Вы не можете удалить чужой пост");
         }
 
-        // Удаляем лайки
         likeRepository.deleteAllByPost(post);
-        // Удаляем комментарии
         commentRepository.deleteAllByPost(post);
-        // Удаляем пост
         postRepository.delete(post);
     }
 }

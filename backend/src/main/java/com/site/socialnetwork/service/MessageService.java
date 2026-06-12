@@ -73,4 +73,15 @@ public class MessageService {
                 message.isRead()
         );
     }
+    public long getUnreadCount(User currentUser, User otherUser) {
+        return messageRepository.countBySenderAndReceiverAndIsReadFalse(otherUser, currentUser);
+    }
+
+    public void markAsRead(User currentUser, User otherUser) {
+        List<Message> unreadMessages = messageRepository.findBySenderAndReceiverAndIsReadFalse(otherUser, currentUser);
+        for (Message msg : unreadMessages) {
+            msg.setRead(true);
+        }
+        messageRepository.saveAll(unreadMessages);
+    }
 }

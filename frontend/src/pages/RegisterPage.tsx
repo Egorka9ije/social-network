@@ -76,10 +76,20 @@ function RegisterPage() {
                            required style={inputStyle} />
 
                     <button type="submit" style={{
-                        width: '100%', padding: 14, backgroundColor: '#1a73e8',
-                        color: 'white', border: 'none', borderRadius: 8,
-                        fontSize: 16, cursor: 'pointer', fontWeight: 600, marginTop: 8
-                    }}>
+                        width: '100%', padding: 14, backgroundColor: '#1a73e8', color: 'white',
+                        border: 'none', borderRadius: 30, fontSize: 16, cursor: 'pointer',
+                        fontWeight: 600, transition: 'all 0.3s ease',
+                        boxShadow: '0 4px 12px rgba(26,115,232,0.3)'
+                    }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,115,232,0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(26,115,232,0.3)';
+                            }}
+                    >
                         Зарегистрироваться
                     </button>
                 </form>

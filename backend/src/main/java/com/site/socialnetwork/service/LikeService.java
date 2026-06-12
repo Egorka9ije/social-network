@@ -46,6 +46,14 @@ public class LikeService {
         return likeRepository.countByPost(post);
     }
 
+    public long getTotalLikes(User user) {
+        return likeRepository.countByPost_User(user);
+    }
+    public boolean isLikedByUser(Long postId, User user) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Пост не найден"));
+        return likeRepository.existsByUserAndPost(user, post);
+    }
 
 
 }

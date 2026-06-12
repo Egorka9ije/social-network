@@ -2,11 +2,14 @@ package com.site.socialnetwork.controller;
 
 import com.site.socialnetwork.dto.UserDTO;
 import com.site.socialnetwork.entity.User;
+import com.site.socialnetwork.repository.UserRepository;
 import com.site.socialnetwork.service.AuthService;
+import com.site.socialnetwork.service.LikeService;
 import com.site.socialnetwork.service.SubscriptionService;
 import com.site.socialnetwork.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,11 +21,15 @@ public class UserController {
     private final AuthService authService;
     private final UserService userService;
     private final SubscriptionService subscriptionService;
+    private final UserRepository userRepository;
+    private final LikeService likeService;
 
-    public UserController(AuthService authService, UserService userService, SubscriptionService subscriptionService) {
+    public UserController(AuthService authService, UserService userService, SubscriptionService subscriptionService, UserRepository userRepository, LikeService likeService) {
         this.authService = authService;
         this.userService = userService;
         this.subscriptionService = subscriptionService;
+        this.userRepository = userRepository;
+        this.likeService = likeService;
     }
 
     @GetMapping("/me")
@@ -67,5 +74,19 @@ public class UserController {
     @GetMapping("/{id}/followers")
     public ResponseEntity<List<UserDTO>> getFollowers(@PathVariable Long id) {
         return ResponseEntity.ok(subscriptionService.getFollowers(id));
+    }
+
+    @PutMapping("/me/avatar")
+    public ResponseEntity<?> updateAvatar(@RequestParam("avatar") MultipartFile file) {
+        User user = authService.getCurrentUser();
+        UserDTO updated = userService.updateAvatar(user, file);
+        return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/{id}/likes-count")
+    public ResponseEntity<Long> getUserLikesCount(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        return ResponseEntity.ok(likeService.getTotalLikes(user));
     }
 }

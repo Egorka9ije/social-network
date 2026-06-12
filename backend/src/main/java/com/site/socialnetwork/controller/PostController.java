@@ -124,4 +124,10 @@ public class PostController {
         commentService.deleteComment(commentId, user);
         return ResponseEntity.ok("Комментарий удалён");
     }
+
+    @GetMapping("/{id}/is-liked")
+    public ResponseEntity<Boolean> isLiked(@PathVariable Long id) {
+        User user = authService.getCurrentUser();
+        return ResponseEntity.ok(likeService.isLikedByUser(id, user));
+    }
 }

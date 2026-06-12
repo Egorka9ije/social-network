@@ -4,6 +4,8 @@ import RegisterPage from './pages/RegisterPage';
 import FeedPage from './pages/FeedPage';
 import ProfilePage from './pages/ProfilePage';
 import MessagesPage from './pages/MessagesPage';
+import AdminPage from './pages/AdminPage';
+
 
 function App() {
     return (
@@ -13,6 +15,9 @@ function App() {
             <Route path="/profile/:id" element={< ProfilePage />} />
             <Route path="/" element={<FeedPage />} />
             <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+
+
         </Routes>
     );
 }
